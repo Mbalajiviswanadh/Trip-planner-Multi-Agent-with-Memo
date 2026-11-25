@@ -19,7 +19,8 @@ const META = {
   guardrail: { label: 'Guardrail', note: 'Request is outside travel planning', icon: ShieldAlert },
 }
 
-function buildSteps(message) {
+function buildSteps(message, pending) {
+  if (!message?.run) return []
   const run = message.run
   const steps = [{ id: 'supervisor', state: 'done' }]
   if (run.intent === 'chat') steps.push({ id: 'chat', state: 'done' })
@@ -27,8 +28,15 @@ function buildSteps(message) {
   else {
     run.agents.forEach((a) => steps.push({ id: a, state: 'done' }))
     const waiting = message.kind === 'draft' && message.approval?.state === 'pending'
-    steps.push({ id: 'human', state: waiting ? 'waiting' : 'done' })
-    steps.push({ id: 'final', state: waiting ? 'idle' : 'done' })
+    const revised = message.approval?.state === 'revised'
+    steps.push({
+      id: 'human',
+      state: waiting ? 'waiting' : 'done',
+    })
+    steps.push({
+      id: 'final',
+      state: waiting ? 'idle' : pending ? 'waiting' : 'done',
+    })
   }
   return steps
 }
@@ -101,9 +109,9 @@ function Stat({ icon: Icon, label, value }) {
   )
 }
 
-function RunDetails({ message }) {
+function RunDetails({ message, pending }) {
   const run = message.run
-  const steps = buildSteps(message)
+  const steps = buildSteps(message, pending)
   const constraints = Object.entries(run.constraints || {})
     .map(([k, v]) => [k.replace(/_/g, ' '), Array.isArray(v) ? v.join(', ') : v])
     .filter(([, v]) => v)
@@ -181,7 +189,7 @@ export default function FlowPanel({ message, pending, onClose }) {
           </div>
         )}
         {message?.run ? (
-          <RunDetails message={message} />
+          <RunDetails message={message} pending={pending} />
         ) : (
           !pending && <p className="text-sm text-muted">Send a trip request to see which agents ran, how many model calls it took, and the sources they used.</p>
         )}

@@ -1,4 +1,4 @@
-# TripMate Frontend
+# Trip planner
 
 React + Vite + Redux Toolkit + Tailwind CSS + Framer Motion client for the TripMate AI FastAPI backend.
 

@@ -35,7 +35,8 @@ export default function ChatPage() {
   const flowMessage = useMemo(
     () =>
       messages.find((m) => m.id === flowMessageId && m.run) ||
-      [...messages].reverse().find((m) => m.run?.intent === 'travel') ||
+      [...messages].reverse().find((m) => m.run?.intent === 'travel' || m.run?.agents?.length > 0) ||
+      [...messages].reverse().find((m) => m.run) ||
       null,
     [messages, flowMessageId],
   )
