@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Plus, RefreshCw } from 'lucide-react'
+import { LogOut, Plug, Plus, RefreshCw } from 'lucide-react'
 import Logo from './Logo'
+import McpModal from './McpModal'
 import ThreadItem from './ThreadItem'
+import { api } from '../lib/api'
 import { fetchThreads } from '../store/threadsSlice'
 import { logout } from '../store/authSlice'
 import { groupThreads, initials } from '../lib/format'
@@ -13,10 +15,18 @@ export default function Sidebar({ onNavigate }) {
   const navigate = useNavigate()
   const user = useSelector((s) => s.auth.user)
   const { items, status, error } = useSelector((s) => s.threads)
+  const [mcpOpen, setMcpOpen] = useState(false)
+  const [mcpCount, setMcpCount] = useState(0)
 
   useEffect(() => {
     if (status === 'idle') dispatch(fetchThreads())
   }, [status, dispatch])
+
+  useEffect(() => {
+    api.mcpServers()
+      .then((res) => setMcpCount((res.servers || []).filter((s) => s.enabled).length))
+      .catch(() => {})
+  }, [])
 
   const newChat = () => {
     navigate('/')
@@ -28,9 +38,17 @@ export default function Sidebar({ onNavigate }) {
       <div className="flex items-center justify-between px-4 pb-3 pt-4">
         <Logo />
       </div>
-      <div className="px-3 pb-2">
+      <div className="space-y-1.5 px-3 pb-2">
         <button className="btn btn-outline w-full justify-start" onClick={newChat}>
           <Plus size={16} /> New trip
+        </button>
+        <button className="btn btn-outline w-full justify-between" onClick={() => setMcpOpen(true)}>
+          <span className="flex items-center gap-2"><Plug size={15} /> MCP Integrations</span>
+          {mcpCount > 0 && (
+            <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent">
+              {mcpCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -80,6 +98,11 @@ export default function Sidebar({ onNavigate }) {
           <LogOut size={16} />
         </button>
       </div>
+      <McpModal
+        open={mcpOpen}
+        onClose={() => setMcpOpen(false)}
+        onChanged={(list) => setMcpCount(list.filter((s) => s.enabled).length)}
+      />
     </div>
   )
 }

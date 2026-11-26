@@ -175,4 +175,9 @@ export const api = {
   approve: (body) => request('/api/travel/approve', { method: 'POST', body, timeout: LONG }),
   history: (id, page = 1, limit = 20) =>
     request(`/api/history/${encodeURIComponent(id)}?page=${page}&limit=${limit}`),
+  mcpCatalog: () => request('/api/mcp/catalog'),
+  mcpServers: () => request('/api/mcp/servers'),
+  mcpConnect: (body) => request('/api/mcp/connect', { method: 'POST', body, timeout: 45000 }),
+  mcpToggle: (id, enabled) => request(`/api/mcp/servers/${encodeURIComponent(id)}`, { method: 'PATCH', body: { enabled } }),
+  mcpDelete: (id) => request(`/api/mcp/servers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 }

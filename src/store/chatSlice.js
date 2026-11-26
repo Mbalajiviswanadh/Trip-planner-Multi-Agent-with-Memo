@@ -24,8 +24,10 @@ function buildRun(res, elapsedMs) {
       hotels: res.hotel_results || '',
       weather: res.weather_results || '',
       budget: res.budget_results || '',
+      mcp: res.user_mcp_results || '',
     },
     memoryTrace: res.memory_trace || null,
+    mcpTrace: res.mcp_trace || null,
   }
 }
 
@@ -42,6 +44,7 @@ const AGENT_STATUS = {
   itinerary_agent: 'Drafting your itinerary',
   human_approval: 'Preparing draft for review',
   final_agent: 'Writing your response',
+  user_mcp_agent: 'Running connected MCP tools',
 }
 
 export const sendMessage = createAsyncThunk(

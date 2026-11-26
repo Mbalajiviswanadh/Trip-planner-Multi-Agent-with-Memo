@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Brain,
   Check, ChevronDown, Clock, Cpu, ExternalLink, GitBranch, Hotel, CloudSun, MessageCircle, Plane,
-  Route, ShieldAlert, Sparkles, UserCheck, Users, Wallet, Workflow, X, Loader2,
+  Plug, Route, ShieldAlert, Sparkles, UserCheck, Users, Wallet, Workflow, X, Loader2,
 } from 'lucide-react'
 import { extractLinks, formatClock, formatDuration, useElapsed } from '../lib/format'
 import { setFlowTab } from '../store/uiSlice'
@@ -19,6 +19,7 @@ const META = {
   itinerary_agent: { label: 'Itinerary', note: 'Writes the draft plan', icon: Route },
   human: { label: 'Your review', note: 'You approve or request changes', icon: UserCheck },
   final: { label: 'Final plan', note: 'Polishes the approved plan', icon: Sparkles },
+  user_mcp_agent: { label: 'Connected MCPs', note: 'Runs your connected external tools', icon: Plug },
   chat: { label: 'Chat agent', note: 'Replies conversationally', icon: MessageCircle },
   guardrail: { label: 'Guardrail', note: 'Request is outside travel planning', icon: ShieldAlert },
 }
@@ -35,23 +36,22 @@ function buildSteps(message, pending) {
   if (run.intent === 'chat') steps.push({ id: 'chat', state: 'done' })
   else if (run.intent === 'blocked') steps.push({ id: 'guardrail', state: 'done' })
   else {
-    run.agents.forEach((a) => steps.push({ id: a, state: 'done' }))
-    const hasApproval = message.kind === 'draft' || !!message.approval || run.agents.includes('itinerary_agent')
-    if (hasApproval) {
-      const waiting = message.kind === 'draft' && message.approval?.state === 'pending'
-      steps.push({
-        id: 'human',
-        state: waiting ? 'waiting' : 'done',
-      })
-      steps.push({
-        id: 'final',
-        state: waiting ? 'idle' : pending ? 'waiting' : 'done',
-      })
-    } else {
-      steps.push({
-        id: 'final',
-        state: 'done',
-      })
+    const travelAgents = run.agents.filter((a) => a !== 'user_mcp_agent')
+    const hasMcp = run.agents.includes('user_mcp_agent') || run.mcpTrace?.invoked
+    travelAgents.forEach((a) => steps.push({ id: a, state: 'done' }))
+
+    if (travelAgents.length > 0) {
+      const hasApproval = message.kind === 'draft' || !!message.approval || travelAgents.includes('itinerary_agent')
+      if (hasApproval) {
+        const waiting = message.kind === 'draft' && message.approval?.state === 'pending'
+        steps.push({ id: 'human', state: waiting ? 'waiting' : 'done' })
+        steps.push({ id: 'final', state: waiting ? 'idle' : pending ? 'waiting' : 'done' })
+      } else {
+        steps.push({ id: 'final', state: 'done' })
+      }
+    }
+    if (hasMcp) {
+      steps.push({ id: 'user_mcp_agent', state: 'done' })
     }
   }
   return steps
@@ -185,6 +185,45 @@ function RunDetails({ message, pending }) {
           <ul className="mt-2 space-y-2">
             {resources.map(([k, label]) => <Resource key={k} label={label} text={run.results[k]} />)}
           </ul>
+        </div>
+      )}
+
+      {run.mcpTrace?.invoked && (
+        <div>
+          <h3 className="text-xs font-semibold text-muted flex items-center gap-1.5">
+            <Plug size={12} /> Connected MCP Tool Trace
+          </h3>
+          <div className="mt-2 space-y-2">
+            {run.mcpTrace.error && (
+              <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+                {run.mcpTrace.error}
+              </p>
+            )}
+            {(run.mcpTrace.tool_calls || []).map((tc, idx) => (
+              <div key={idx} className="rounded-xl border border-line bg-sunken p-3 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold flex items-center gap-1.5">
+                    <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent">
+                      {tc.server}
+                    </span>
+                    <span className="font-mono">{tc.tool}</span>
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      tc.status === 'success'
+                        ? 'bg-emerald-500/15 text-emerald-600'
+                        : 'bg-danger/15 text-danger'
+                    }`}
+                  >
+                    {tc.status}
+                  </span>
+                </div>
+                {tc.output && (
+                  <p className="text-xs text-muted break-words leading-relaxed">{tc.output}</p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
