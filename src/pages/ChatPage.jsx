@@ -49,7 +49,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: 'end' })
-  }, [messages.length, pending, threadId])
+  }, [messages.length, pending?.streamText, pending?.statusText, threadId])
 
   const send = async (text) => {
     setStartError('')
@@ -116,7 +116,7 @@ export default function ChatPage() {
               {messages.map((m) => (
                 <Message key={m.id} message={m} threadId={threadId} busy={!!pending} />
               ))}
-              {pending && <PendingMessage startedAt={pending.startedAt} />}
+              {pending && <PendingMessage pending={pending} />}
               <div ref={bottom} />
             </div>
           )}

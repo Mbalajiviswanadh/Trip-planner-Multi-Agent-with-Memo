@@ -25,20 +25,56 @@ function buildRun(res, elapsedMs) {
       weather: res.weather_results || '',
       budget: res.budget_results || '',
     },
+    memoryTrace: res.memory_trace || null,
   }
 }
 
 const failText = (e) => e?.message || 'Something went wrong.'
 
-export const sendMessage = createAsyncThunk('chat/send', async ({ threadId, text }, { rejectWithValue }) => {
-  const t0 = performance.now()
-  try {
-    const res = await api.travel({ message: text, thread_id: threadId })
-    return { res, elapsedMs: performance.now() - t0 }
-  } catch (e) {
-    return rejectWithValue(failText(e))
-  }
-})
+const AGENT_STATUS = {
+  supervisor: 'Analyzing your request',
+  chat_agent: 'Thinking of a reply',
+  guardrail_blocked: 'Checking safety rules',
+  flight_agent: 'Searching flights',
+  hotel_agent: 'Searching hotels',
+  weather_agent: 'Checking weather forecast',
+  budget_agent: 'Calculating budget',
+  itinerary_agent: 'Drafting your itinerary',
+  human_approval: 'Preparing draft for review',
+  final_agent: 'Writing your response',
+}
+
+export const sendMessage = createAsyncThunk(
+  'chat/send',
+  async ({ threadId, text }, { dispatch, rejectWithValue }) => {
+    const t0 = performance.now()
+    try {
+      const res = await api.travelStream(
+        { message: text, thread_id: threadId },
+        {
+          onEvent: (eventName, payload) => {
+            if (eventName === 'agent_started') {
+              const agent = payload?.agent || ''
+              dispatch(slice.actions.streamStatus({
+                threadId,
+                activeAgent: agent,
+                statusText: AGENT_STATUS[agent] || 'Working on it',
+              }))
+            } else if (eventName === 'token' && payload?.text) {
+              dispatch(slice.actions.streamToken({
+                threadId,
+                text: payload.text,
+              }))
+            }
+          },
+        },
+      )
+      return { res, elapsedMs: performance.now() - t0 }
+    } catch (e) {
+      return rejectWithValue(failText(e))
+    }
+  },
+)
 
 export const approvePlan = createAsyncThunk(
   'chat/approve',
@@ -73,7 +109,21 @@ export const loadHistory = createAsyncThunk('chat/history', async (threadId, { r
 const slice = createSlice({
   name: 'chat',
   initialState: { byThread: cached?.byThread || {}, pending: {} },
-  reducers: {},
+  reducers: {
+    streamStatus(s, a) {
+      const { threadId, activeAgent, statusText } = a.payload
+      if (s.pending[threadId]) {
+        s.pending[threadId].activeAgent = activeAgent
+        s.pending[threadId].statusText = statusText
+      }
+    },
+    streamToken(s, a) {
+      const { threadId, text } = a.payload
+      if (s.pending[threadId]) {
+        s.pending[threadId].streamText = (s.pending[threadId].streamText || '') + text
+      }
+    },
+  },
   extraReducers: (b) => {
     b.addCase(sendMessage.pending, (s, a) => {
       const { threadId, text, retry } = a.meta.arg
@@ -85,7 +135,7 @@ const slice = createSlice({
         bucket.messages.push({ id: a.meta.requestId, role: 'user', content: text, createdAt: Date.now() })
       }
       bucket.loaded = true
-      s.pending[threadId] = { startedAt: Date.now() }
+      s.pending[threadId] = { startedAt: Date.now(), statusText: 'Analyzing your request', activeAgent: 'supervisor', streamText: '' }
     })
       .addCase(sendMessage.fulfilled, (s, a) => {
         const { threadId } = a.meta.arg
@@ -146,7 +196,22 @@ const slice = createSlice({
         if (bucket.messages.length) return
         a.payload.forEach((t, i) => {
           bucket.messages.push({ id: `h_${i}_u`, role: 'user', content: t.query, createdAt: 0 })
-          if (t.answer) bucket.messages.push({ id: `h_${i}_a`, role: 'assistant', kind: 'text', content: t.answer, createdAt: 0 })
+          if (t.answer) {
+            // Reconstruct a run object from the history metadata the backend now returns.
+            // memory_trace will be null for older turns that predate the feature,
+            // but selected_agents and constraints are always available from checkpoint state.
+            const run = t.selected_agents || t.trip_constraints
+              ? buildRun(t, 0)
+              : undefined
+            bucket.messages.push({
+              id: `h_${i}_a`,
+              role: 'assistant',
+              kind: 'text',
+              content: t.answer,
+              createdAt: 0,
+              run,
+            })
+          }
         })
       })
       .addCase(loadHistory.rejected, (s, a) => {

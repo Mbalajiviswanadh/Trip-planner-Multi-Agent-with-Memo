@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  Brain,
   Check, ChevronDown, Clock, Cpu, ExternalLink, GitBranch, Hotel, CloudSun, MessageCircle, Plane,
-  Route, ShieldAlert, Sparkles, UserCheck, Users, Wallet, X, Loader2, Workflow,
+  Route, ShieldAlert, Sparkles, UserCheck, Users, Wallet, Workflow, X, Loader2,
 } from 'lucide-react'
 import { extractLinks, formatClock, formatDuration, useElapsed } from '../lib/format'
+import { setFlowTab } from '../store/uiSlice'
+import MemoryPanel from './MemoryPanel'
 
 const META = {
   supervisor: { label: 'Supervisor', note: 'Reads the request and picks agents', icon: GitBranch },
@@ -19,6 +23,11 @@ const META = {
   guardrail: { label: 'Guardrail', note: 'Request is outside travel planning', icon: ShieldAlert },
 }
 
+const TABS = [
+  { id: 'agent', label: 'Agent Flow', icon: Workflow },
+  { id: 'memory', label: 'Chat Memory', icon: Brain },
+]
+
 function buildSteps(message, pending) {
   if (!message?.run) return []
   const run = message.run
@@ -27,16 +36,23 @@ function buildSteps(message, pending) {
   else if (run.intent === 'blocked') steps.push({ id: 'guardrail', state: 'done' })
   else {
     run.agents.forEach((a) => steps.push({ id: a, state: 'done' }))
-    const waiting = message.kind === 'draft' && message.approval?.state === 'pending'
-    const revised = message.approval?.state === 'revised'
-    steps.push({
-      id: 'human',
-      state: waiting ? 'waiting' : 'done',
-    })
-    steps.push({
-      id: 'final',
-      state: waiting ? 'idle' : pending ? 'waiting' : 'done',
-    })
+    const hasApproval = message.kind === 'draft' || !!message.approval || run.agents.includes('itinerary_agent')
+    if (hasApproval) {
+      const waiting = message.kind === 'draft' && message.approval?.state === 'pending'
+      steps.push({
+        id: 'human',
+        state: waiting ? 'waiting' : 'done',
+      })
+      steps.push({
+        id: 'final',
+        state: waiting ? 'idle' : pending ? 'waiting' : 'done',
+      })
+    } else {
+      steps.push({
+        id: 'final',
+        state: 'done',
+      })
+    }
   }
   return steps
 }
@@ -145,7 +161,9 @@ function RunDetails({ message, pending }) {
 
       {run.reasoning && (
         <div>
-          <h3 className="text-xs font-semibold text-muted">Why these agents</h3>
+          <h3 className="text-xs font-semibold text-muted">
+            {run.intent === 'blocked' ? 'Guardrail assessment' : 'Why these agents'}
+          </h3>
           <p className="mt-2 text-sm leading-relaxed">{run.reasoning}</p>
         </div>
       )}
@@ -175,24 +193,90 @@ function RunDetails({ message, pending }) {
 
 export default function FlowPanel({ message, pending, onClose }) {
   const elapsed = useElapsed(pending?.startedAt)
+  const dispatch = useDispatch()
+  const activeTab = useSelector((s) => s.ui.flowTab || 'agent')
+  const setActiveTab = (tab) => dispatch(setFlowTab(tab))
+
   return (
     <div className="flex h-full w-full flex-col bg-surface">
+      {/* ── Header with close ── */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-line px-5">
-        <h2 className="flex items-center gap-2 text-sm font-semibold"><Workflow size={16} className="text-muted" /> Agent flow</h2>
-        <button className="icon-btn" onClick={onClose} aria-label="Close agent flow"><X size={18} /></button>
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          {activeTab === 'agent'
+            ? <><Workflow size={16} className="text-muted" /> Agent flow</>
+            : <><Brain size={16} className="text-muted" /> Chat memory</>
+          }
+        </h2>
+        <button className="icon-btn" onClick={onClose} aria-label="Close panel"><X size={18} /></button>
       </header>
+
+      {/* ── Tab bar ── */}
+      <div className="flex shrink-0 border-b border-line px-2 pt-1">
+        {TABS.map((tab) => {
+          const Icon = tab.icon
+          const active = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors relative
+                ${active ? 'text-accent' : 'text-muted hover:text-ink'}`}
+            >
+              <Icon size={13} />
+              {tab.label}
+              {active && (
+                <motion.div
+                  layoutId="tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Tab content ── */}
       <div className="flex-1 overflow-y-auto p-5">
-        {pending && (
-          <div className="mb-6 rounded-xl border border-line p-4">
-            <p className="flex items-center gap-2 text-sm font-semibold"><Loader2 size={15} className="animate-spin" /> Agents are running</p>
-            <p className="mt-1 text-xs text-muted">{formatDuration(elapsed)} elapsed. Per-agent progress appears when the run finishes.</p>
-          </div>
-        )}
-        {message?.run ? (
-          <RunDetails message={message} pending={pending} />
-        ) : (
-          !pending && <p className="text-sm text-muted">Send a trip request to see which agents ran, how many model calls it took, and the sources they used.</p>
-        )}
+        <AnimatePresence mode="wait">
+          {activeTab === 'agent' ? (
+            <motion.div
+              key="agent"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.18 }}
+            >
+              {pending && (
+                <div className="mb-6 rounded-xl border border-line p-4">
+                  <p className="flex items-center gap-2 text-sm font-semibold"><Loader2 size={15} className="animate-spin" /> Agents are running</p>
+                  <p className="mt-1 text-xs text-muted">{formatDuration(elapsed)} elapsed. Per-agent progress appears when the run finishes.</p>
+                </div>
+              )}
+              {message?.run ? (
+                <RunDetails message={message} pending={pending} />
+              ) : (
+                !pending && <p className="text-sm text-muted">Send a trip request to see which agents ran, how many model calls it took, and the sources they used.</p>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="memory"
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 8 }}
+              transition={{ duration: 0.18 }}
+            >
+              {pending && (
+                <div className="mb-6 rounded-xl border border-line p-4">
+                  <p className="flex items-center gap-2 text-sm font-semibold"><Loader2 size={15} className="animate-spin" /> Building response…</p>
+                  <p className="mt-1 text-xs text-muted">Memory trace will appear here once the run completes.</p>
+                </div>
+              )}
+              <MemoryPanel message={message} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

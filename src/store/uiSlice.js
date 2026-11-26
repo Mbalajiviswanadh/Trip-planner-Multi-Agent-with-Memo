@@ -8,6 +8,7 @@ const slice = createSlice({
     sidebarOpen: false,
     flowOpen: typeof window !== 'undefined' && window.innerWidth >= 1280,
     flowMessageId: null,
+    flowTab: 'agent', // persists the active tab across thread switches
   },
   reducers: {
     toggleTheme(s) {
@@ -19,6 +20,9 @@ const slice = createSlice({
     setFlowOpen(s, a) {
       s.flowOpen = a.payload
     },
+    setFlowTab(s, a) {
+      s.flowTab = a.payload
+    },
     showFlowFor(s, a) {
       s.flowMessageId = a.payload
       s.flowOpen = true
@@ -26,5 +30,5 @@ const slice = createSlice({
   },
 })
 
-export const { toggleTheme, setSidebar, setFlowOpen, showFlowFor } = slice.actions
+export const { toggleTheme, setSidebar, setFlowOpen, setFlowTab, showFlowFor } = slice.actions
 export default slice.reducer

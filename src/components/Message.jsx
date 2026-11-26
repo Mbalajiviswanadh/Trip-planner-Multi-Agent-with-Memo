@@ -45,7 +45,7 @@ function Message({ message, threadId, busy }) {
     )
   }
 
-  const hasFlow = message.run?.intent === 'travel'
+  const hasFlow = !!message.run
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="flex gap-3">
       <span className="mt-1 shrink-0"><Logo size={24} withText={false} /></span>
