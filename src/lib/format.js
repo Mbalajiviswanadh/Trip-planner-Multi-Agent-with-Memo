@@ -17,15 +17,49 @@ export function initials(name = '') {
   return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase()
 }
 
+export function formatThreadDate(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return ''
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfItem = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const diffDays = Math.round((startOfToday - startOfItem) / 864e5)
+
+  if (diffDays === 0) return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return d.toLocaleDateString([], { weekday: 'short' })
+  if (d.getFullYear() === now.getFullYear()) return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export function groupThreads(items) {
-  const now = Date.now()
-  const day = 864e5
-  const groups = { Today: [], 'Previous 7 days': [], Older: [] }
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const buckets = new Map()
+
+  const add = (label, item) => {
+    if (!buckets.has(label)) buckets.set(label, [])
+    buckets.get(label).push(item)
+  }
+
   items.forEach((t) => {
-    const age = now - new Date(t.updated_at || t.created_at).getTime()
-    ;(age < day ? groups.Today : age < 7 * day ? groups['Previous 7 days'] : groups.Older).push(t)
+    const d = new Date(t.updated_at || t.created_at)
+    if (Number.isNaN(d.getTime())) {
+      add('Older', t)
+      return
+    }
+    const startOfItem = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    const diffDays = Math.round((startOfToday - startOfItem) / 864e5)
+
+    if (diffDays <= 0) add('Today', t)
+    else if (diffDays === 1) add('Yesterday', t)
+    else if (diffDays < 7) add('Previous 7 days', t)
+    else if (diffDays < 30) add('Previous 30 days', t)
+    else add(d.toLocaleDateString([], { month: 'long', year: 'numeric' }), t)
   })
-  return Object.entries(groups).filter(([, v]) => v.length)
+
+  return Array.from(buckets.entries())
 }
 
 const URL_RE = /https?:\/\/[^\s)\]>"'<]+/g

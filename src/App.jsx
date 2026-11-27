@@ -4,6 +4,7 @@ import { MotionConfig } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import AuthPage from './pages/AuthPage'
 import ChatPage from './pages/ChatPage'
+import LandingPage from './pages/LandingPage'
 import ErrorBoundary from './components/ErrorBoundary'
 import Logo from './components/Logo'
 import { restoreSession } from './store/authSlice'
@@ -14,6 +15,11 @@ function Splash() {
       <div className="animate-pulse"><Logo /></div>
     </div>
   )
+}
+
+function Home() {
+  const token = useSelector((s) => s.auth.token)
+  return token ? <ChatPage /> : <LandingPage />
 }
 
 function Protected({ children }) {
@@ -49,7 +55,8 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<PublicOnly><AuthPage /></PublicOnly>} />
-            <Route path="/" element={<Protected><ChatPage /></Protected>} />
+            <Route path="/welcome" element={<LandingPage />} />
+            <Route path="/" element={<Home />} />
             <Route path="/c/:threadId" element={<Protected><ChatPage /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

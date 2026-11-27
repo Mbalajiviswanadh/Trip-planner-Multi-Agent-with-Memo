@@ -354,6 +354,17 @@ export default function MemoryPanel({ message }) {
             llmCalls={tierCalls.constraint_inherit ?? 0}
             llmNote="State lookup — zero LLM cost"
           />
+          <TierRow
+            tier="5"
+            label="pgvector Past Trips (On-Demand)"
+            desc={trace.needs_past_trips
+              ? 'Query needed past trips — searched pgvector semantic + recent store'
+              : 'Skipped — query did not need past trips (0 DB calls, ~500 tokens saved)'}
+            active={!!trace.needs_past_trips}
+            value={trace.needs_past_trips ? `Mode: ${trace.vector_mode || 'on_demand'}` : null}
+            llmCalls={0}
+            llmNote="Local FastEmbed + pgvector — zero LLM cost"
+          />
         </div>
       </Section>
 

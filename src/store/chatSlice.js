@@ -58,10 +58,18 @@ export const sendMessage = createAsyncThunk(
           onEvent: (eventName, payload) => {
             if (eventName === 'agent_started') {
               const agent = payload?.agent || ''
+              const label = AGENT_STATUS[agent] || 'Working on it'
               dispatch(slice.actions.streamStatus({
                 threadId,
                 activeAgent: agent,
-                statusText: AGENT_STATUS[agent] || 'Working on it',
+                statusText: label,
+                liveStep: { stage: agent, text: label },
+              }))
+            } else if (eventName === 'live_step' && payload?.text) {
+              dispatch(slice.actions.streamStatus({
+                threadId,
+                statusText: payload.text,
+                liveStep: { stage: payload.stage || 'step', text: payload.text },
               }))
             } else if (eventName === 'token' && payload?.text) {
               dispatch(slice.actions.streamToken({
@@ -114,10 +122,18 @@ const slice = createSlice({
   initialState: { byThread: cached?.byThread || {}, pending: {} },
   reducers: {
     streamStatus(s, a) {
-      const { threadId, activeAgent, statusText } = a.payload
+      const { threadId, activeAgent, statusText, liveStep } = a.payload
       if (s.pending[threadId]) {
-        s.pending[threadId].activeAgent = activeAgent
-        s.pending[threadId].statusText = statusText
+        if (activeAgent) s.pending[threadId].activeAgent = activeAgent
+        if (statusText) s.pending[threadId].statusText = statusText
+        if (liveStep?.text) {
+          const steps = s.pending[threadId].liveSteps || []
+          const prev = steps[steps.length - 1]
+          if (!prev || prev.text !== liveStep.text) {
+            steps.push({ ...liveStep, ts: Date.now() })
+            s.pending[threadId].liveSteps = steps
+          }
+        }
       }
     },
     streamToken(s, a) {
@@ -138,7 +154,7 @@ const slice = createSlice({
         bucket.messages.push({ id: a.meta.requestId, role: 'user', content: text, createdAt: Date.now() })
       }
       bucket.loaded = true
-      s.pending[threadId] = { startedAt: Date.now(), statusText: 'Analyzing your request', activeAgent: 'supervisor', streamText: '' }
+      s.pending[threadId] = { startedAt: Date.now(), statusText: 'Analyzing your request', activeAgent: 'supervisor', streamText: '', liveSteps: [{ stage: 'supervisor', text: 'Analyzing your request', ts: Date.now() }] }
     })
       .addCase(sendMessage.fulfilled, (s, a) => {
         const { threadId } = a.meta.arg

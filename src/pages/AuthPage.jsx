@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import { AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react'
@@ -36,8 +37,13 @@ function Field({ label, error, children, id }) {
 
 export default function AuthPage() {
   const dispatch = useDispatch()
+  const [searchParams] = useSearchParams()
   const { status, error } = useSelector((s) => s.auth)
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState(searchParams.get('mode') === 'register' ? 'register' : 'login')
+
+  useEffect(() => {
+    setMode(searchParams.get('mode') === 'register' ? 'register' : 'login')
+  }, [searchParams])
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errs, setErrs] = useState({})
   const [show, setShow] = useState(false)
@@ -70,7 +76,7 @@ export default function AuthPage() {
   return (
     <div className="grid min-h-full lg:grid-cols-2">
       <aside className="hidden flex-col justify-between border-r border-line bg-surface p-12 lg:flex">
-        <Logo />
+        <Link to="/" aria-label="TripMate home" className="w-fit"><Logo /></Link>
         <div>
           <h1 className="max-w-md font-display text-5xl leading-[1.05]">Describe a trip. Approve the plan.</h1>
           <p className="mt-4 max-w-sm text-sm text-muted">A team of agents handles the legwork. Nothing is final until you say so.</p>
@@ -82,7 +88,7 @@ export default function AuthPage() {
       <main className="relative flex items-center justify-center px-6 py-12">
         <div className="absolute right-4 top-4"><ThemeToggle /></div>
         <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden"><Logo /></div>
+          <div className="mb-8 lg:hidden"><Link to="/" aria-label="TripMate home" className="inline-block"><Logo /></Link></div>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={mode} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               <h2 className="font-display text-4xl">{isRegister ? 'Create your account' : 'Welcome back'}</h2>

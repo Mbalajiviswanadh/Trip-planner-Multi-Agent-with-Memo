@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
-import { LogOut, Plug, Plus, RefreshCw } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ChevronDown, Loader2, LogOut, Plug, Plus, RefreshCw } from 'lucide-react'
 import Logo from './Logo'
 import McpModal from './McpModal'
 import ThreadItem from './ThreadItem'
@@ -14,7 +14,7 @@ export default function Sidebar({ onNavigate }) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const user = useSelector((s) => s.auth.user)
-  const { items, status, error } = useSelector((s) => s.threads)
+  const { items, status, loadingMore, hasMore, page, total, error } = useSelector((s) => s.threads)
   const [mcpOpen, setMcpOpen] = useState(false)
   const [mcpCount, setMcpCount] = useState(0)
 
@@ -36,7 +36,14 @@ export default function Sidebar({ onNavigate }) {
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex items-center justify-between px-4 pb-3 pt-4">
-        <Logo />
+        <Link
+          to="/welcome"
+          onClick={() => onNavigate?.()}
+          aria-label="TripMate landing page"
+          className="rounded-lg transition-opacity hover:opacity-80"
+        >
+          <Logo />
+        </Link>
       </div>
       <div className="space-y-1.5 px-3 pb-2">
         <button className="btn btn-outline w-full justify-start" onClick={newChat}>
@@ -75,8 +82,11 @@ export default function Sidebar({ onNavigate }) {
         )}
 
         {groupThreads(items).map(([label, list]) => (
-          <section key={label} className="mt-4">
-            <h2 className="px-3 pb-1 text-xs font-semibold text-muted">{label}</h2>
+          <section key={label} className="mt-4 first:mt-2">
+            <h2 className="flex items-center justify-between px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted/80">
+              <span>{label}</span>
+              <span className="font-normal tabular-nums text-muted/60">{list.length}</span>
+            </h2>
             <ul className="space-y-0.5">
               {list.map((t) => (
                 <ThreadItem key={t.id} thread={t} onNavigate={onNavigate} />
@@ -84,6 +94,26 @@ export default function Sidebar({ onNavigate }) {
             </ul>
           </section>
         ))}
+
+        {hasMore && (
+          <div className="pt-3 px-1">
+            <button
+              className="btn btn-outline w-full justify-center text-xs py-2"
+              disabled={loadingMore}
+              onClick={() => dispatch(fetchThreads({ page: page + 1, append: true }))}
+            >
+              {loadingMore ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" /> Loading…
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={13} /> Load more ({items.length}/{total})
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </nav>
 
       <div className="flex items-center gap-3 border-t border-line p-3">

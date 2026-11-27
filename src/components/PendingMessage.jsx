@@ -13,6 +13,7 @@ function fallbackPhrase(ms) {
 export default function PendingMessage({ pending }) {
   const startedAt = pending?.startedAt
   const statusText = pending?.statusText
+  const liveSteps = pending?.liveSteps || []
   const streamText = pending?.streamText || ''
   const ms = useElapsed(startedAt)
 
@@ -60,20 +61,35 @@ export default function PendingMessage({ pending }) {
             </span>
           </div>
         ) : (
-          <div className="pt-1 text-sm text-muted">
-            {statusText || fallbackPhrase(ms)}
-            <span className="ml-1 inline-flex gap-0.5" aria-hidden="true">
-              {[0, 1, 2].map((i) => (
-                <motion.span
-                  key={i}
-                  animate={{ opacity: [0.2, 1, 0.2] }}
-                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-                >
-                  .
-                </motion.span>
-              ))}
-            </span>
-            <span className="ml-2 text-xs tabular-nums">{formatDuration(ms)}</span>
+          <div className="pt-1 space-y-2">
+            <div className="text-sm text-muted">
+              {statusText || fallbackPhrase(ms)}
+              <span className="ml-1 inline-flex gap-0.5" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <motion.span
+                    key={i}
+                    animate={{ opacity: [0.2, 1, 0.2] }}
+                    transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                  >
+                    .
+                  </motion.span>
+                ))}
+              </span>
+              <span className="ml-2 text-xs tabular-nums">{formatDuration(ms)}</span>
+            </div>
+            {liveSteps.length > 1 && (
+              <ul className="space-y-1 border-l border-line pl-3">
+                {liveSteps.slice(-4).map((st, idx, arr) => {
+                  const isCurrent = idx === arr.length - 1
+                  return (
+                    <li key={`${st.stage}-${idx}`} className={`text-xs flex items-center gap-1.5 ${isCurrent ? 'text-ink font-medium' : 'text-muted/80'}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isCurrent ? 'bg-accent animate-pulse' : 'bg-emerald-500'}`} />
+                      <span className="truncate">{st.text}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </div>
         )}
       </div>
