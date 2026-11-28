@@ -8,19 +8,16 @@ import LandingPage from './pages/LandingPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
 import ErrorBoundary from './components/ErrorBoundary'
-import Logo from './components/Logo'
 import { restoreSession } from './store/authSlice'
 
-function Splash() {
-  return (
-    <div className="flex h-full items-center justify-center">
-      <div className="animate-pulse"><Logo /></div>
-    </div>
-  )
-}
-
 function Protected({ children }) {
-  const token = useSelector((s) => s.auth.token)
+  const dispatch = useDispatch()
+  const { token, bootstrapped } = useSelector((s) => s.auth)
+
+  useEffect(() => {
+    if (token && !bootstrapped) dispatch(restoreSession())
+  }, [dispatch, token, bootstrapped])
+
   return token ? children : <Navigate to="/auth" replace />
 }
 
@@ -30,21 +27,12 @@ function PublicOnly({ children }) {
 }
 
 export default function App() {
-  const dispatch = useDispatch()
-  const { token, bootstrapped } = useSelector((s) => s.auth)
   const theme = useSelector((s) => s.ui.theme)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
     document.documentElement.style.colorScheme = theme
   }, [theme])
-
-  useEffect(() => {
-    if (token) dispatch(restoreSession())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  if (!bootstrapped) return <Splash />
 
   return (
     <MotionConfig reducedMotion="user">
