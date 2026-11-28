@@ -80,7 +80,9 @@ export default function PrivacyPage() {
           <h2 className="text-base font-semibold text-ink">5. Contact</h2>
           <p>
             For privacy questions or data deletion requests, please contact the TripMate AI team at{' '}
-            <span className="font-medium text-ink">support@tripmate-ai.app</span>.
+            <a href="mailto:balajiviswanadh04@gmail.com" className="font-medium text-accent hover:underline">
+              balajiviswanadh04@gmail.com
+            </a>.
           </p>
         </section>
       </main>
