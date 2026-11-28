@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import AuthPage from './pages/AuthPage'
 import ChatPage from './pages/ChatPage'
 import LandingPage from './pages/LandingPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
 import ErrorBoundary from './components/ErrorBoundary'
 import Logo from './components/Logo'
 import { restoreSession } from './store/authSlice'
@@ -52,6 +54,8 @@ export default function App() {
             <Route path="/auth" element={<PublicOnly><AuthPage /></PublicOnly>} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/welcome" element={<Navigate to="/" replace />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route path="/chat" element={<Protected><ChatPage /></Protected>} />
             <Route path="/c/:threadId" element={<Protected><ChatPage /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -294,7 +294,7 @@ export default function LandingPage() {
             <p className="mt-3 max-w-md text-sm text-muted">
               Create a free account to save your trips, inspect every agent’s sources, and keep your preferences across conversations.
             </p>
-            <Link to={token ? '/' : '/auth?mode=register'} className="btn btn-primary mt-7 px-6 py-3">
+            <Link to={token ? '/chat' : '/auth?mode=register'} className="btn btn-primary mt-7 px-6 py-3">
               {token ? 'Open TripMate' : 'Plan your first trip'} <ArrowRight size={16} />
             </Link>
           </div>
@@ -305,7 +305,11 @@ export default function LandingPage() {
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-6 py-8 text-xs text-muted sm:flex-row">
           <Logo size={20} />
-          <p>Multi-agent trip planning with human-in-the-loop approval.</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <span>Multi-agent trip planning with human-in-the-loop approval.</span>
+            <Link to="/privacy" className="font-medium hover:text-ink hover:underline">Privacy Policy</Link>
+            <Link to="/terms" className="font-medium hover:text-ink hover:underline">Terms of Service</Link>
+          </div>
         </div>
       </footer>
     </div>
