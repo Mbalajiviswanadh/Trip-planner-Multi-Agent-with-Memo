@@ -114,7 +114,13 @@ export default function McpModal({ open, onClose, onChanged }) {
   }
 
   useEffect(() => {
-    if (open) loadAll()
+    if (open) {
+      setCustomName('')
+      setCustomUrl('')
+      setCustomTransport('streamable_http')
+      setCustomKey('')
+      loadAll()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
@@ -320,7 +326,7 @@ export default function McpModal({ open, onClose, onChanged }) {
                     )
                   })}
 
-                <form onSubmit={connectCustom} className="rounded-xl border border-line p-4 space-y-3">
+                <form onSubmit={connectCustom} autoComplete="off" className="rounded-xl border border-line p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <Globe size={16} className="text-violet-500" />
                     <h3 className="text-sm font-semibold">Custom Remote MCP (URL / API Key / OAuth 2.1)</h3>
@@ -331,12 +337,16 @@ export default function McpModal({ open, onClose, onChanged }) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <input
                       type="text"
+                      name="mcp_display_name"
+                      autoComplete="off"
+                      data-lpignore="true"
                       placeholder="Display name (e.g. Notion MCP)"
                       value={customName}
                       onChange={(e) => setCustomName(e.target.value)}
                       className="rounded-lg border border-line bg-sunken px-3 py-2 text-xs outline-none focus:border-accent"
                     />
                     <select
+                      name="mcp_transport"
                       value={customTransport}
                       onChange={(e) => setCustomTransport(e.target.value)}
                       className="rounded-lg border border-line bg-sunken px-3 py-2 text-xs outline-none focus:border-accent"
@@ -347,6 +357,9 @@ export default function McpModal({ open, onClose, onChanged }) {
                   </div>
                   <input
                     type="url"
+                    name="mcp_server_url"
+                    autoComplete="off"
+                    data-lpignore="true"
                     required
                     placeholder="https://mcp.example.com/mcp"
                     value={customUrl}
@@ -354,7 +367,12 @@ export default function McpModal({ open, onClose, onChanged }) {
                     className="w-full rounded-lg border border-line bg-sunken px-3 py-2 text-xs outline-none focus:border-accent"
                   />
                   <input
-                    type="password"
+                    type="text"
+                    name="mcp_api_token"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    spellCheck={false}
+                    style={{ WebkitTextSecurity: 'disc' }}
                     placeholder="API Key or Bearer Token (leave blank for open or OAuth 2.1 servers)"
                     value={customKey}
                     onChange={(e) => setCustomKey(e.target.value)}

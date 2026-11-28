@@ -2,23 +2,54 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
-import { AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { AlertCircle, Brain, Eye, EyeOff, Loader2, Plug, ShieldCheck, Sparkles } from 'lucide-react'
 import Logo from '../components/Logo'
 import ThemeToggle from '../components/ThemeToggle'
 import { clearAuthError, login, register } from '../store/authSlice'
 
 const EMAIL = /^[\w.+-]+@[A-Za-z0-9-]+\.[A-Za-z0-9-.]+$/
 
-const STAGES = ['Supervisor reads your request', 'Flights', 'Hotels', 'Weather', 'Budget', 'Itinerary draft', 'You approve']
+const STAGES = [
+  '4-Intent LLM Router & Guardrails',
+  'Flight, Hotel, Weather & Budget agents',
+  'Dynamic MCPs (Drive, Calendar, Notion)',
+  '5-Tier Memory & On-Demand pgvector',
+  'Itinerary draft → You approve',
+]
+
+const CAPABILITIES = [
+  {
+    icon: Plug,
+    title: 'Dynamic MCP Integrations',
+    desc: 'Connect Google Drive, Calendar, Notion, or custom MCPs with 3-Stage Tool RAG.',
+  },
+  {
+    icon: Brain,
+    title: '5-Tier Hybrid Memory',
+    desc: 'Mem0 + Qdrant user facts and on-demand pgvector past-trip recall.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Guardrails & HITL',
+    desc: 'Input/output safety checks plus human review before any plan is final.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Live Execution Trace',
+    desc: 'Watch real-time agent steps, memory tiers, and MCP tool filters stream live.',
+  },
+]
+
+const MCP_BADGES = ['Tavily', 'AviationStack', 'Weather MCP', 'Google Calendar', 'Google Drive', 'Notion', 'Custom MCP']
 
 function Pipeline() {
   return (
-    <motion.ol initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.18, delayChildren: 0.3 } } }} className="mt-12 space-y-0">
+    <motion.ol initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.12, delayChildren: 0.2 } } }} className="mt-4 space-y-0">
       {STAGES.map((s, i) => (
-        <motion.li key={s} variants={{ hidden: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } }} className="relative flex items-center gap-4 pb-5 last:pb-0">
+        <motion.li key={s} variants={{ hidden: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } }} className="relative flex items-center gap-3 pb-2.5 last:pb-0">
           {i < STAGES.length - 1 && <span className="absolute left-[5px] top-3 h-full w-px bg-line" aria-hidden="true" />}
-          <span className={`relative z-10 h-[11px] w-[11px] rounded-full ${i === STAGES.length - 1 ? 'bg-accent' : 'border-2 border-accent bg-bg'}`} />
-          <span className={`text-sm ${i === STAGES.length - 1 ? 'font-semibold' : 'text-muted'}`}>{s}</span>
+          <span className={`relative z-10 h-[11px] w-[11px] shrink-0 rounded-full ${i === STAGES.length - 1 ? 'bg-accent' : 'border-2 border-accent bg-bg'}`} />
+          <span className={`text-xs xl:text-sm ${i === STAGES.length - 1 ? 'font-semibold text-ink' : 'text-muted'}`}>{s}</span>
         </motion.li>
       ))}
     </motion.ol>
@@ -74,15 +105,42 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="grid min-h-full lg:grid-cols-2">
-      <aside className="hidden flex-col justify-between border-r border-line bg-surface p-12 lg:flex">
-        <Link to="/" aria-label="TripMate home" className="w-fit"><Logo /></Link>
-        <div>
-          <h1 className="max-w-md font-display text-5xl leading-[1.05]">Describe a trip. Approve the plan.</h1>
-          <p className="mt-4 max-w-sm text-sm text-muted">A team of agents handles the legwork. Nothing is final until you say so.</p>
-          <Pipeline />
+    <div className="grid min-h-full lg:h-dvh lg:overflow-hidden lg:grid-cols-2">
+      <aside className="hidden flex-col justify-between gap-4 border-r border-line bg-surface p-7 xl:p-9 lg:flex">
+        <Link to="/" aria-label="TripMate home" className="w-fit shrink-0"><Logo /></Link>
+
+        <div className="space-y-4">
+          <div>
+            <h1 className="max-w-md font-display text-3xl xl:text-4xl leading-[1.08]">Describe a trip. Approve the plan.</h1>
+            <p className="mt-2 max-w-md text-xs xl:text-sm text-muted">
+              A multi-agent travel workspace with live MCP integrations, 5-tier memory, and human-in-the-loop approval.
+            </p>
+            <Pipeline />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {CAPABILITIES.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="rounded-xl border border-line bg-bg/70 p-2.5 xl:p-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+                  <Icon size={13} className="shrink-0 text-accent" />
+                  <span>{title}</span>
+                </div>
+                <p className="mt-0.5 text-[11px] leading-snug text-muted">{desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <span />
+
+        <div className="space-y-1.5 border-t border-line pt-3 shrink-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Connected &amp; Supported MCP Tools</p>
+          <div className="flex flex-wrap gap-1.5">
+            {MCP_BADGES.map((name) => (
+              <span key={name} className="rounded-full border border-line bg-bg px-2 py-0.5 text-[11px] font-medium text-muted">
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
       </aside>
 
       <main className="relative flex items-center justify-center px-6 py-12">
