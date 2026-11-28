@@ -79,16 +79,29 @@ export default function ChatPage() {
 
       <AnimatePresence>
         {sidebarOpen && (
-          <div className="fixed inset-0 z-40 lg:hidden">
-            <motion.div className="absolute inset-0 bg-ink/40" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => dispatch(setSidebar(false))} />
-            <motion.aside className="absolute inset-y-0 left-0 w-72 max-w-[85%] border-r border-line" initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'tween', duration: 0.22 }}>
+          <motion.div
+            key="mobile-sidebar"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-40 lg:hidden"
+          >
+            <div className="absolute inset-0 bg-ink/40" onClick={() => dispatch(setSidebar(false))} />
+            <motion.aside
+              className="absolute inset-y-0 left-0 w-72 max-w-[85%] border-r border-line"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.2 }}
+            >
               <Sidebar onNavigate={() => dispatch(setSidebar(false))} />
             </motion.aside>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      <section className="flex min-w-0 flex-1 flex-col">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line px-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-2">
             <button className="icon-btn lg:hidden" onClick={() => dispatch(setSidebar(true))} aria-label="Open chats"><Menu size={18} /></button>
@@ -131,20 +144,41 @@ export default function ChatPage() {
       </section>
 
       {isXl ? (
-        <motion.aside initial={false} animate={{ width: flowOpen ? 380 : 0 }} transition={{ type: 'tween', duration: 0.25 }} className="shrink-0 overflow-hidden border-l border-line">
-          <div className="h-full w-[380px]">
-            <FlowPanel message={flowMessage} pending={pending} onClose={() => dispatch(setFlowOpen(false))} />
-          </div>
+        <motion.aside
+          initial={false}
+          animate={{ width: flowOpen ? 380 : 0 }}
+          transition={{ type: 'tween', duration: 0.22 }}
+          className={`shrink-0 overflow-hidden border-l border-line ${flowOpen ? '' : 'pointer-events-none border-l-0'}`}
+          aria-hidden={!flowOpen}
+        >
+          {flowOpen && (
+            <div className="h-full w-[380px]">
+              <FlowPanel message={flowMessage} pending={pending} onClose={() => dispatch(setFlowOpen(false))} />
+            </div>
+          )}
         </motion.aside>
       ) : (
         <AnimatePresence>
           {flowOpen && (
-            <div className="fixed inset-0 z-40">
-              <motion.div className="absolute inset-0 bg-ink/40" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => dispatch(setFlowOpen(false))} />
-              <motion.aside className="absolute inset-y-0 right-0 w-[400px] max-w-[92%] border-l border-line" initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'tween', duration: 0.22 }}>
+            <motion.div
+              key="mobile-flow"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, pointerEvents: 'none' }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 z-40"
+            >
+              <div className="absolute inset-0 bg-ink/40" onClick={() => dispatch(setFlowOpen(false))} />
+              <motion.aside
+                className="absolute inset-y-0 right-0 w-[400px] max-w-[92%] border-l border-line"
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'tween', duration: 0.2 }}
+              >
                 <FlowPanel message={flowMessage} pending={pending} onClose={() => dispatch(setFlowOpen(false))} />
               </motion.aside>
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
       )}

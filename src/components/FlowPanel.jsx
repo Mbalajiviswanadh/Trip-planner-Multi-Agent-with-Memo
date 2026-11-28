@@ -305,11 +305,7 @@ export default function FlowPanel({ message, pending, onClose }) {
               <Icon size={13} />
               {tab.label}
               {active && (
-                <motion.div
-                  layoutId="tab-indicator"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full"
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full" />
               )}
             </button>
           )
@@ -317,65 +313,51 @@ export default function FlowPanel({ message, pending, onClose }) {
       </div>
 
       {/* ── Tab content ── */}
-      <div className="flex-1 overflow-y-auto p-5">
-        <AnimatePresence mode="wait">
-          {activeTab === 'agent' ? (
-            <motion.div
-              key="agent"
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.18 }}
-            >
-              {pending && (
-                <div className="mb-6 rounded-xl border border-line bg-sunken/50 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="flex items-center gap-2 text-sm font-semibold">
-                      <Loader2 size={15} className="animate-spin text-accent" /> Live execution
-                    </p>
-                    <span className="text-xs tabular-nums text-muted">{formatDuration(elapsed)}</span>
-                  </div>
-                  {pending.liveSteps?.length > 0 ? (
-                    <ol className="space-y-2">
-                      {pending.liveSteps.map((st, idx, arr) => {
-                        const isLast = idx === arr.length - 1
-                        return (
-                          <li key={`${st.stage}-${idx}`} className="flex items-start gap-2.5 text-xs">
-                            <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${isLast ? 'bg-accent animate-pulse' : 'bg-emerald-500'}`} />
-                            <span className={isLast ? 'font-semibold text-ink' : 'text-muted'}>{st.text}</span>
-                          </li>
-                        )
-                      })}
-                    </ol>
-                  ) : (
-                    <p className="text-xs text-muted">{pending.statusText || 'Working on it…'}</p>
-                  )}
+      <div className="flex-1 min-h-0 overflow-y-auto p-5">
+        {activeTab === 'agent' ? (
+          <div>
+            {pending && (
+              <div className="mb-6 rounded-xl border border-line bg-sunken/50 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="flex items-center gap-2 text-sm font-semibold">
+                    <Loader2 size={15} className="animate-spin text-accent" /> Live execution
+                  </p>
+                  <span className="text-xs tabular-nums text-muted">{formatDuration(elapsed)}</span>
                 </div>
-              )}
-              {message?.run ? (
-                <RunDetails message={message} pending={pending} />
-              ) : (
-                !pending && <p className="text-sm text-muted">Send a trip request to see which agents ran, how many model calls it took, and the sources they used.</p>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="memory"
-              initial={{ opacity: 0, x: 8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 8 }}
-              transition={{ duration: 0.18 }}
-            >
-              {pending && (
-                <div className="mb-6 rounded-xl border border-line p-4">
-                  <p className="flex items-center gap-2 text-sm font-semibold"><Loader2 size={15} className="animate-spin" /> Building response…</p>
-                  <p className="mt-1 text-xs text-muted">Memory trace will appear here once the run completes.</p>
-                </div>
-              )}
-              <MemoryPanel message={message} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {pending.liveSteps?.length > 0 ? (
+                  <ol className="space-y-2">
+                    {pending.liveSteps.map((st, idx, arr) => {
+                      const isLast = idx === arr.length - 1
+                      return (
+                        <li key={`${st.stage}-${idx}`} className="flex items-start gap-2.5 text-xs">
+                          <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${isLast ? 'bg-accent animate-pulse' : 'bg-emerald-500'}`} />
+                          <span className={isLast ? 'font-semibold text-ink' : 'text-muted'}>{st.text}</span>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                ) : (
+                  <p className="text-xs text-muted">{pending.statusText || 'Working on it…'}</p>
+                )}
+              </div>
+            )}
+            {message?.run ? (
+              <RunDetails message={message} pending={pending} />
+            ) : (
+              !pending && <p className="text-sm text-muted">Send a trip request to see which agents ran, how many model calls it took, and the sources they used.</p>
+            )}
+          </div>
+        ) : (
+          <div>
+            {pending && (
+              <div className="mb-6 rounded-xl border border-line p-4">
+                <p className="flex items-center gap-2 text-sm font-semibold"><Loader2 size={15} className="animate-spin" /> Building response…</p>
+                <p className="mt-1 text-xs text-muted">Memory trace will appear here once the run completes.</p>
+              </div>
+            )}
+            <MemoryPanel message={message} />
+          </div>
+        )}
       </div>
     </div>
   )
