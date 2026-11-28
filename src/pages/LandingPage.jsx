@@ -102,7 +102,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {token ? (
-              <Link to="/" className="btn btn-primary">
+              <Link to="/chat" className="btn btn-primary">
                 Open app <ArrowRight size={15} />
               </Link>
             ) : (
@@ -156,7 +156,7 @@ export default function LandingPage() {
               className="mt-8 flex flex-wrap items-center justify-center gap-3"
             >
               {token ? (
-                <Link to="/" className="btn btn-primary px-5 py-3">
+                <Link to="/chat" className="btn btn-primary px-5 py-3">
                   Back to your trips <ArrowRight size={16} />
                 </Link>
               ) : (

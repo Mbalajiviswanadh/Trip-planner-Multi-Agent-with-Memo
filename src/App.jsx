@@ -17,11 +17,6 @@ function Splash() {
   )
 }
 
-function Home() {
-  const token = useSelector((s) => s.auth.token)
-  return token ? <ChatPage /> : <LandingPage />
-}
-
 function Protected({ children }) {
   const token = useSelector((s) => s.auth.token)
   return token ? children : <Navigate to="/auth" replace />
@@ -29,7 +24,7 @@ function Protected({ children }) {
 
 function PublicOnly({ children }) {
   const token = useSelector((s) => s.auth.token)
-  return token ? <Navigate to="/" replace /> : children
+  return token ? <Navigate to="/chat" replace /> : children
 }
 
 export default function App() {
@@ -55,8 +50,9 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<PublicOnly><AuthPage /></PublicOnly>} />
-            <Route path="/welcome" element={<LandingPage />} />
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/welcome" element={<Navigate to="/" replace />} />
+            <Route path="/chat" element={<Protected><ChatPage /></Protected>} />
             <Route path="/c/:threadId" element={<Protected><ChatPage /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

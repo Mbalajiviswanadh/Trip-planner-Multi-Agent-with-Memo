@@ -29,7 +29,7 @@ export default function Sidebar({ onNavigate }) {
   }, [])
 
   const newChat = () => {
-    navigate('/')
+    navigate('/chat')
     onNavigate?.()
   }
 
@@ -37,7 +37,7 @@ export default function Sidebar({ onNavigate }) {
     <div className="flex h-full flex-col bg-surface">
       <div className="flex items-center justify-between px-4 pb-3 pt-4">
         <Link
-          to="/welcome"
+          to="/"
           onClick={() => onNavigate?.()}
           aria-label="TripMate landing page"
           className="rounded-lg transition-opacity hover:opacity-80"

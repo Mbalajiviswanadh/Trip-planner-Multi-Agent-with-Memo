@@ -42,7 +42,7 @@ export default function ThreadItem({ thread, onNavigate }) {
     setBusy(true)
     try {
       await dispatch(removeThread(thread.id)).unwrap()
-      if (active) navigate('/')
+      if (active) navigate('/chat')
     } catch {
       setBusy(false)
       setConfirming(false)
